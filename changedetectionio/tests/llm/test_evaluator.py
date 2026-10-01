@@ -634,6 +634,27 @@ class TestSummariseChange:
         passed_max_tokens = call_kwargs.kwargs.get('max_tokens')
         assert passed_max_tokens == _summary_max_tokens(diff, thinking_budget=2000)
 
+    @pytest.mark.parametrize('model, provider_kind, multiplier', [
+        ('gpt-5', 'openai', 5),
+        ('gpt-5', 'openai', 1),
+        ('ollama/llama3', 'ollama', 5),
+        ('ollama/llama3', 'ollama', 1),
+    ])
+    def test_summary_thinking_headroom_is_applied_before_multiplier(self, model, provider_kind, multiplier):
+        """The final completion budget includes headroom before provider/model scaling."""
+        from changedetectionio.llm.evaluator import summarise_change
+        ds = _make_datastore(llm_cfg={
+            'model': model,
+            'provider_kind': provider_kind,
+            'thinking_budget': 2000,
+            'local_token_multiplier': multiplier,
+        })
+        watch = _make_watch(llm_change_summary='Describe changes')
+        with patch('changedetectionio.llm.client.completion',
+                   return_value=('Some summary', 100)) as mock_llm:
+            summarise_change(watch, ds, diff='- old\n+ new')
+        assert mock_llm.call_args.kwargs['max_tokens'] == (400 + 2000) * multiplier
+
     def test_dynamic_token_cap_scales_with_diff_size(self):
         """Larger diffs produce a higher max_tokens cap, bounded at 3000."""
         from changedetectionio.llm.evaluator import _summary_max_tokens

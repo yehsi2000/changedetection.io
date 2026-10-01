@@ -2,7 +2,7 @@ import os
 import re
 from loguru import logger
 from wtforms.widgets.core import TimeInput
-from flask_babel import lazy_gettext as _l, gettext
+from flask_babel import gettext, lazy_gettext as _l, lazy_pgettext
 
 from changedetectionio.blueprint.menu_modes import MENU_SIDEBAR_ACTIONMODES, MENU_SIDEBAR_ACTIONMODES_DEFAULT
 from changedetectionio.blueprint.rss import RSS_FORMAT_TYPES, RSS_TEMPLATE_TYPE_OPTIONS, RSS_TEMPLATE_HTML_DEFAULT
@@ -1015,7 +1015,8 @@ class processor_text_json_diff_form(commonSettingsForm):
     notification_muted = TernaryNoneBooleanField(_l('Notifications'), default=None, yes_text=_l("Muted"), no_text=_l("On"))
     notification_screenshot = BooleanField(_l('Attach screenshot to notification (where possible)'), default=False)
 
-    conditions_match_logic = RadioField(_l('Match'), choices=[('ALL', _l('Match all of the following')),('ANY', _l('Match any of the following'))], default='ALL')
+    # TRANSLATORS: Label for the setting combining condition rules with AND/OR. Noun; not the verb 'to match'.
+    conditions_match_logic = RadioField(lazy_pgettext('condition', 'Match'), choices=[('ALL', _l('Match all of the following')),('ANY', _l('Match any of the following'))], default='ALL')
     conditions = FieldList(FormField(ConditionFormRow), min_entries=1)  # Add rule logic here
     use_page_title_in_list = TernaryNoneBooleanField(_l('Use page <title> in list'), default=None)
 
@@ -1179,6 +1180,7 @@ class globalSettingsApplicationUIForm(Form):
     socket_io_enabled = BooleanField(_l('Realtime UI Updates Enabled'), default=True, validators=[validators.Optional()])
     favicons_enabled = BooleanField(_l('Favicons Enabled'), default=True, validators=[validators.Optional()])
     use_page_title_in_list = BooleanField(_l('Use page <title> in watch overview list')) #BooleanField=True
+    use_share_watch = BooleanField(_l('Enable watch "sharing"'))
     timeago_format = SelectField(_l('Relative time format'),
                                  choices=[('long', _l('Long (1 minute ago)')), ('short', _l('Short (1m ago)'))],
                                  default='long', validators=[validators.Optional()])
@@ -1264,7 +1266,23 @@ class globalSettingsLLMForm(Form):
         _l('API Key'),
         validators=[validators.Optional()],
         render_kw={
-            "autocomplete": "off",
+            # NOT "off": Chrome deliberately ignores autocomplete="off" on type=password,
+            # so the browser's saved site password was being prefilled here. This field
+            # renders blank precisely so that submitting it untouched PRESERVES the stored
+            # key - a prefilled value therefore silently overwrote a working API key on the
+            # next Save. "new-password" is the value Chrome honours; the data-* attributes
+            # ask 1Password and LastPass to keep out of it too.
+            "autocomplete": "new-password",
+            "data-1p-ignore": "true",
+            "data-lpignore": "true",
+            "data-form-type": "other",
+            # Belt and braces, for when no key is stored yet and the field is editable
+            # (once one IS stored the template disables it outright). Chrome will not
+            # autofill a readonly input, and global-settings.js drops the attribute the
+            # moment the field is focused or clicked. readonly rather than disabled here,
+            # because a disabled input is not submitted and the key could never be set.
+            "readonly": True,
+            "data-unlock-on-interact": "1",
             "style": "width: 24em;",
         },
     )

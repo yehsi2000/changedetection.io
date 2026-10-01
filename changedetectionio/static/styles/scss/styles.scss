@@ -38,6 +38,7 @@
 @use "parts/restock_graph";
 @use "parts/toast";
 @use "parts/login_form";
+@use "parts/pwa_install";
 @use "parts/tabs";
 @use "parts/sub_tabs";
 
@@ -478,10 +479,6 @@ label {
     color: var(--color-text-new-watch-input);
   }
 
-  .label {
-    display: none;
-  }
-
   legend {
     color: var(--color-text-legend);
     font-weight: bold;
@@ -704,6 +701,7 @@ footer {
     padding: 0.5em;
     margin: 0;
     width: 100%;
+    max-width: 100% !important;
   }
 
   #nav-menu {
@@ -1003,27 +1001,6 @@ ul {
   vertical-align: middle;
 }
 
-
-#quick-watch-processor-type {
-  ul#processor {
-    color: #fff;
-    padding-left: 0px;
-    li {
-      list-style: none;
-      font-size: 0.9rem;
-      display: grid;
-      grid-template-columns: auto 1fr;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 0.5rem;
-    }
-  }
-  label, input {
-    padding: 0;
-    margin: 0;
-  }
-}
-
 .restock-label {
   &.in-stock {
     background-color: #7a0cc5;
@@ -1127,7 +1104,9 @@ ul#highlightSnippetActions {
 }
 @media only screen and (max-width: 768px) {
   .box {
-    padding: 0.25rem !important;
+    padding: 0 !important;
+    border: none;
+    border-style: none !important;
   }
 }
 
@@ -1157,4 +1136,10 @@ header {
 
 textarea::placeholder {
     white-space: pre-wrap;
+}
+
+@media only screen and (max-width: 480px) {
+  .pure-form button[type=submit] {
+    margin: 0 !important; /*override*/
+  }
 }
