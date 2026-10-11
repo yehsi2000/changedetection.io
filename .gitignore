@@ -32,3 +32,6 @@ test-memory.log
 
 # Per-test loguru logs written by tests/conftest.py (dirname(__file__)/logs)
 changedetectionio/tests/logs/
+
+# Local proxy list for docker-compose (may contain credentials)
+proxies.json

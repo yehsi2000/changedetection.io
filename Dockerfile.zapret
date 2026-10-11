@@ -1,0 +1,17 @@
+# /home/ahn/dev/changedetection.io/Dockerfile.zapret
+FROM alpine:latest AS builder
+RUN apk add --no-cache build-base git linux-headers zlib-dev bsd-compat-headers libcap-dev
+RUN git clone --depth=1 https://github.com/bol-van/zapret.git /zapret
+WORKDIR /zapret
+RUN make -C tpws
+
+FROM alpine:latest
+RUN apk add --no-cache zlib libcap
+COPY --from=builder /zapret/tpws/tpws /usr/local/bin/tpws
+EXPOSE 1080
+# 윈도우 DNS/패킷 파편화와 유사한 효과를 내는 최적의 조합
+# --split-pos=midsld: 도메인 중간 부분에서 패킷 분할 (가장 효과적)
+# --disorder: 분할된 패킷 순서를 뒤섞음
+# --tlsrec=midsld: TLS 레코드를 도메인 중간에서 두 개로 나눔
+# --mss=1200: 서버에서 보내는 패킷 크기를 제한하여 서버측 파편화 유도 (핵심)
+CMD ["tpws", "--socks", "--bind-addr=0.0.0.0", "--port=1080", "--split-pos=midsld", "--disorder", "--tlsrec=midsld", "--mss=1200"]
